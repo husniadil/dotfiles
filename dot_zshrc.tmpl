@@ -1,0 +1,115 @@
+# ==============================================================================
+# Oh My Zsh Configuration
+# ==============================================================================
+
+# Path to oh-my-zsh installation
+export ZSH="$HOME/.oh-my-zsh"
+{{ if ne .machine "laptop" }}ZSH_CUSTOM="$HOME/.config/zsh/custom"
+# oh-my-zsh comes from a pinned chezmoi external, not a git checkout.
+zstyle ':omz:update' mode disabled
+{{ end }}
+# Theme
+ZSH_THEME="zenith"
+
+# Plugins
+# Standard plugins: $ZSH/plugins/
+# Custom plugins: $ZSH_CUSTOM/plugins/
+plugins=(
+  git
+  copyfile
+  copypath
+  dirhistory
+  history
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+  fast-syntax-highlighting
+  battery
+)
+
+# Load Oh My Zsh
+source $ZSH/oh-my-zsh.sh
+
+# ==============================================================================
+# Custom Keybindings
+# ==============================================================================
+
+bindkey '^[b' backward-word
+bindkey '^[f' forward-word
+
+# ==============================================================================
+# Environment
+# ==============================================================================
+# ~/.zshenv already ran. Re-source it so PATH order survives /etc/zprofile's
+# path_helper, which pushes system dirs ahead of everything on login shells.
+# typeset -U keeps PATH free of duplicates.
+
+. "$HOME/.zshenv"
+
+# ==============================================================================
+# Tool Initializations
+# ==============================================================================
+
+# mise (runtime version manager)
+[ -x ~/.local/bin/mise ] && eval "$(~/.local/bin/mise activate zsh)"
+
+# direnv
+command -v direnv >/dev/null && eval "$(direnv hook zsh)"
+
+# grok completions
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+
+# ==============================================================================
+# Shell Customization
+# ==============================================================================
+
+export GPG_TTY=$(tty)
+
+# Show virtual environment in prompt
+show_virtual_env() {
+  if [ -n "$VIRTUAL_ENV" ]; then
+    echo "($(basename $VIRTUAL_ENV))"
+  fi
+}
+PS1='$(show_virtual_env)'$PS1
+
+# ==============================================================================
+# Aliases & Custom Functions
+# ==============================================================================
+
+# General Aliases
+
+alias cls='clear'
+{{ if or (eq .machine "laptop") (lookPath "nvim") }}alias vim="nvim"
+{{ end }}{{ if eq .machine "laptop" }}alias simctl="xcrun simctl"
+alias flushdns='sudo /usr/bin/dscacheutil -flushcache && sudo /usr/bin/killall -HUP mDNSResponder'
+{{ end }}
+{{ if eq .machine "laptop" }}# Android Development
+
+alias adb="~/Library/Android/sdk/platform-tools/adb"
+alias emulator="~/Library/Android/sdk/emulator/emulator -memory 4096 -cores 2 -avd Pixel_7_Pro"
+
+{{ end }}# Python / Virtual Environment
+
+alias uvvenv="uv venv && source .venv/bin/activate"
+
+venv() {
+  if [ ! -d ".venv" ]; then
+    uv venv
+  fi
+  source .venv/bin/activate
+}
+
+# Git commit with AI-generated message
+gitcommit() {
+  title=$(claude -p "Look at the staged git changes and create a summarizing git commit title. Only respond with the title and no affirmation.")
+  git commit -m "$title"
+}
+
+# Task Management
+
+alias tm='task-master'
+alias taskmaster='task-master'
+
+# Machine-local, unmanaged aliases and functions (work, private).
+[ -f "$HOME/.zshrc.local" ] && . "$HOME/.zshrc.local"

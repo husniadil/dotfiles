@@ -1,0 +1,31 @@
+[core]
+	editor = nano
+[user]
+	name = Husni Adil Makmur
+	email = husni.adil@gmail.com
+{{- if eq .machine "laptop" }}
+	signingkey = 680683F1016F2245ECD31B0577849C70BA8A552A
+[commit]
+	gpgSign = true
+{{- end }}
+{{- if lookPath "git-lfs" }}
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+{{- end }}
+{{- if eq .machine "laptop" }}
+[gpg]
+	program = /opt/homebrew/bin/gpg
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+{{- end }}
+{{- if ne .machine "laptop" }}
+[init]
+	defaultBranch = main
+{{- end }}

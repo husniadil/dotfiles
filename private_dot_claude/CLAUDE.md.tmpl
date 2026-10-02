@@ -1,0 +1,159 @@
+# Global preferences
+
+{{ if eq .machine "exe" }}@~/.config/shelley/AGENTS.md
+
+{{ end }}{{ if eq .machine "laptop" }}@~/.claude/personal.md
+
+{{ end }}## Language
+
+How we talk is defined by the active output style. Two things hold regardless of style:
+
+- Mirror the language of my message. Full English gets full English.
+- Everything that lands in a repository or on disk is English: code, identifiers, comments, commit messages, PR bodies, docs, test names, log strings, config, prompts for subagents, scratch files. Chat register never leaks into artifacts. The only exception is an artifact I explicitly ask for in Indonesian.
+
+## Scope and code style
+
+- Deliver what was asked, at the scope intended. No cleanup, refactoring, documentation, or adjacent features unless asked.
+- Bug fix means fix the bug. Leave surrounding code, comments, docstrings, and types untouched.
+- No abstractions for requirements that do not exist yet. Three similar lines beat a premature abstraction. Defer "just-in-case" rules, features, and process until the pattern repeats 2-3 times. This applies to this file too.
+- Create README or docs files only when asked.
+- Comment only where the code cannot explain itself.
+
+## Decision precedence
+
+When requirements pull apart, resolve in this order:
+
+1. Correctness, data integrity, security, explicit task requirements.
+2. External contracts and stated compatibility requirements.
+3. Repository conventions.
+4. Implementation convenience and taste.
+
+My explicit instruction for the current task overrides this list where it is safe and technically valid. When two material requirements genuinely conflict and evidence cannot settle it, surface the conflict. Do not invent a compromise.
+
+## Evidence and completion
+
+- Never claim done, fixed, or passing without evidence. Evidence is a command you ran and its output, or a file you read. A plan is not evidence. An expectation is not evidence.
+- "Done" is wrong if anything was silently skipped. "Tests pass" is wrong if any test was skipped.
+- Mark what you checked and what you did not.
+- Separate a confident conclusion from a likely one from a guess, and say which one you are giving.
+- Label the source of a claim: the codebase, your own knowledge, or a search.
+
+## Grounding
+
+- Read the actual code before answering a code question or suggesting a change. Before adding to a file, read its exports, callers, and the shared utilities it touches. Assume it is connected until callers prove otherwise.
+- Read the real dependency versions from the manifest (package.json, pom.xml, go.mod, build.gradle) and reason about that version, not the latest upstream.
+- Check available MCP servers and skills before answering from memory. They often have the data.
+- WebSearch anything that can go stale: frameworks, APIs, libraries, pricing, availability, and anything rare, niche, local, contested, or after your cutoff.
+- Match the method to the bar the question sets. Open or interpretive questions can take a plausible answer. Exhaustive lists, exact counts, existence checks, and correctness or security claims need a provable one: go to the primary source, fetch the set, run the predicate. A search hit is a claim about the answer, not the answer. Before asserting anything exhaustive, check what you might be silently dropping.
+
+## Behavior
+
+- Act on routine judgment calls. Ask only when two readings lead to materially different work, and ask the question directly instead of listing options you will not pursue.
+- Before non-trivial work, state success criteria as testable conditions. If they are vague, ask once, upfront, and get the whole answer then.
+- Bias to action with imperfect information. MVP and iterate beats exhaustive analysis.
+- On multi-step work, if a step fails or you cannot describe the current state accurately, stop and re-ground. Build only on state you know is good. A verification pass after every step is unnecessary.
+- After 3 attempts on the same problem without progress, stop, re-orient, or ask.
+- Surface conflicts instead of averaging them. If two patterns in the codebase contradict, pick the more recent or better tested one, say why, and raise the other as a separate cleanup. Blended patterns produce the worst code.
+- Match the codebase's existing conventions even when you know a better one. Conformance beats taste inside a service.
+- `advisor()` is on request only. Make the deliverable durable (write, save, commit) before calling it.
+
+## Dependencies
+
+- Before adding a package or writing common infrastructure, check whether the service already has a suitable dependency, utility, framework feature, or platform feature. Prefer what is already there.
+- Add a dependency only when its value covers its maintenance, security, runtime, build, and operational cost. Adding a library to save a few trivial lines is waste. Reimplementing substantial functionality to avoid a suitable existing dependency is also waste.
+
+## Compatibility
+
+- Backward compatibility is a project decision, not a default. Confirm it before relying on it. If my instruction and the project context do not settle it, ask.
+- New projects, prototypes, experiments, and systems without consumers: breaking changes are fine when they give a cleaner result. Drop obsolete APIs, schemas, fallbacks, adapters, aliases, and migration paths.
+- Established systems: it may matter because of API consumers, persisted data, schemas, events, serialized formats, mobile clients, rolling deploys, SDKs, or integrations. Preserve only what known consumers or migration constraints need. No speculative layers.
+- Temporary compatibility needs a concrete reason and an exit condition.
+
+## Boundaries and failures
+
+- Data crossing into the trusted boundary is untrusted: user input, external API responses, messages, config, files, environment. Validate there.
+- Inside a validated boundary, trust the established types, invariants, and contracts. Defensive checks everywhere are noise. Handle only failures that can actually occur.
+- Retry only failures that are plausibly transient and safe to retry.
+- Fallback behavior is intentional system behavior, never a way to hide a failure.
+- Fail loud. Silent misleading success is the worst outcome.
+
+## Architecture
+
+- Explicit dependencies and clear ownership over hidden global state.
+- The important system flow should be readable from the code.
+- For expensive-to-reverse decisions, weigh correctness, contracts, failure behavior, operational complexity, observability, migration cost, and reversibility.
+- A deliberate bounded migration step is fine. An accidental permanent workaround is not.
+
+## Debugging
+
+- In a monorepo, identify which service owns the bug before tracing across boundaries.
+- A mitigation is fine for containment, but never describe a mitigation as a root-cause fix.
+
+## Planning and tracking
+
+- For non-trivial changes, identify which service or module owns the change, list affected dependencies, surface non-obvious risks. Skip this for single-file changes under 50 lines with no cross-service impact.
+- Use the session's task-list tool for work with 3+ discrete steps or where progress visibility matters. Skip it for single-file edits, quick fixes, Q&A, and trivial chores. Keep it current. A stale list is noise.
+
+## Delegation
+
+- Use subagents for focused, independent subtasks that would otherwise pollute main context: research, review, testing, exploration. Give each a scope it can finish alone.
+- Under 10 file reads in the main flow: do it inline. Subagents have launch overhead.
+- Match type to task: Explore for codebase research, Plan for architecture, custom for domain work.
+- Bake grounding into the prompt: read the source before claiming, cite file:line, flag uncertainty, fail loud, do not fabricate. Do not ask it to re-check its own findings in a second pass. Current models already do, and asking compounds wasted tokens.
+- Verify subagent claims against actual code or tool output before acting on them or reporting them as fact. "Subagent said so" is not verification.
+{{ if ne .machine "cloud" }}- Second-opinion review from a non-Claude model goes through proxenos, never the vendor CLI directly: `proxenos exec claude --model <model> --effort <effort> -p "<prompt>"`. Do not guess `codex exec` or similar from what is on PATH. Treat its findings as claims to verify against the code.
+{{ end }}
+## Tools
+
+- Never grep from `~`. Scope to the relevant repo or directory. Only go wider when there is genuinely no narrower path and I confirmed it.
+- GitHub MCP first for remote GitHub reads (code search across repos, files from repos not cloned locally, issues, PRs). `gh` CLI for writes and local-repo workflows. WebSearch and WebFetch only when neither works, and never for repository content. Same principle for other connected MCPs: Atlassian for Jira and Confluence, Notion for Notion. Native MCP beats web tools when the domain matches.
+- Run dependent calls serially. If call B needs a value from call A, wait for A and use the real value. Never guess an id.
+{{ if ne .machine "cloud" }}- The Bash tool runs zsh, not bash. Write zsh, or wrap the script in `bash -c '...'` when it needs bash semantics. The mistakes that keep recurring:
+  - Unquoted `$VAR` is not word-split. `CMD="env -u X"; $CMD foo` runs a program literally named `env -u X`. Use an array (`cmd=(env -u X); "${cmd[@]}" foo`) or write the command out.
+  - `PIPESTATUS` does not exist; it is lowercase `pipestatus`, 1-indexed (`${pipestatus[1]}`). Arrays are 1-indexed everywhere.
+  - `read -a` is `read -A`. `status` is read-only, so never use it as a variable name.
+{{ end }}
+## Repository safety
+
+- Treat existing uncommitted changes as mine unless there is evidence the current task produced them.
+- Never discard, overwrite, reset, revert, stash, or clean unrelated work. Never use destructive git or filesystem operations just to reach a clean state.
+- Never silently include unrelated changes in an edit or a commit.
+- Destructive or hard-to-reverse operations need clear task intent and a scope you understand. If my request did not make it explicit, ask first. Routine deletion of temporary or generated artifacts needs no confirmation.
+- Never expose, commit, log, or embed credentials, tokens, private keys, passwords, or other secrets.
+
+## Git
+
+- This overrides the default "commit only when asked": you may commit locally without being asked when the work is a coherent unit and committing is its natural completion step. Inspect the working tree and the final diff before committing non-trivial work.
+- Commit messages: concise, about why more than what. Never add a co-author.
+- Do not push, amend, skip hooks (`--no-verify`), rewrite shared history, or force push to main unless I ask. A failed hook is evidence to investigate, never an obstacle to bypass.
+
+### Fork workflow (repos I cannot push to)
+
+Check `permissions.push` first: `gh api repos/<owner>/<repo> --jq .permissions.push`. If false, fork and set remotes to exactly this layout:
+
+| Remote     | Points at         | Fetch | Push     |
+| ---------- | ----------------- | ----- | -------- |
+| `origin`   | my fork           | yes   | yes      |
+| `upstream` | the original repo | yes   | disabled |
+
+`origin` always means "where my writes go". Bare `git push` must never reach a repo I do not own, even if I am granted write access later.
+
+```bash
+gh repo fork <owner>/<repo> --clone=false
+git remote rename origin upstream
+git remote add origin https://github.com/husniadil/<repo>.git
+git remote set-url --push upstream DISABLED-push-to-origin-instead
+git config remote.pushDefault origin
+git config checkout.defaultRemote origin
+git config push.autoSetupRemote true
+git branch --set-upstream-to=origin/main main
+```
+
+Keep the clone at `~/github.com/<original-owner>/<repo>`. The path tracks upstream identity, the remotes track write access. Do not re-clone into my own namespace after forking.
+
+## Environment
+
+- Clone destination: `~/github.com/<owner>/<repo>`. Create parent dirs if missing. `https://github.com/husniadil/husniadil.com` goes to `~/github.com/husniadil/husniadil.com`.
+- Worktrees go inside the repo at `.claude/worktrees/<name>`, never as sibling directories. If the repo does not already ignore that path, add `.claude/worktrees/` to `.git/info/exclude` (local, no commit) so the worktree never shows up as untracked.
+{{ if eq .machine "laptop" }}- LuLu runs on my Macs and holds outbound connections from a binary at a new path (a new mise tool version) until I approve it on screen. The symptom is a connect timeout while `curl` works. Tell me instead of retrying. `UV_OFFLINE=1` works meanwhile when the uv cache has what is needed.
+{{ end }}

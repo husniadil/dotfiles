@@ -1,0 +1,12 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "A GPG signing key fingerprint identifies a public key and is not a secret"
+regexTarget = "line"
+regexes = ['''^\s*signingkey = [0-9A-F]{40}\s*$''']
+
+[[rules]]
+id = "url-embedded-credentials"
+description = "A username and password embedded in a connection URL"
+regex = '''[a-zA-Z][a-zA-Z0-9+.-]*://[^/\s:@'"]+:[^/\s@'"]{3,}@[^/\s'"]+'''

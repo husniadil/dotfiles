@@ -1,0 +1,3 @@
+bind M-F nextword main
+bind M-B prevword main
+set rawsequences

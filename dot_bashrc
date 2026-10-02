@@ -1,0 +1,9 @@
+# Interactive bash. Env and secrets come from ~/.zshenv (POSIX-safe);
+# aliases and functions are zsh-only and live in ~/.zshrc.
+
+. "$HOME/.zshenv"
+
+case $- in *i*)
+  eval "$(direnv hook bash)"
+  ;;
+esac

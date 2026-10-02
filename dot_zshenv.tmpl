@@ -1,0 +1,88 @@
+# ==============================================================================
+# ~/.zshenv — read by EVERY zsh (interactive, scripts, MCP servers, editor
+# spawns) and sourced by ~/.bashrc. Exports only: nothing that prints, prompts,
+# or needs a tty. Interactive setup lives in ~/.zshrc. POSIX-safe outside the
+# zsh guards so bash can source it too.
+# ==============================================================================
+
+export PATH="$HOME/.local/share/mise/shims:{{ if eq .machine "laptop" }}/opt/homebrew/bin:/opt/homebrew/sbin:{{ end }}$HOME/.local/bin:$PATH"
+[ -n "$ZSH_VERSION" ] && typeset -U path PATH   # no duplicate PATH entries
+
+export BUN_CONFIG_DNS_TIME_TO_LIVE_SECONDS=0
+export PI_STATUSLINE_PRESET=classic
+
+# Editor & General Settings
+
+export EDITOR=nano
+export ANONYMIZED_TELEMETRY=false
+export RTK_TELEMETRY_DISABLED=1
+export ORCA_TELEMETRY_DISABLED=1
+export NO_PROXY=localhost
+
+{{ if eq .machine "laptop" }}# PATH Additions
+
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+export PATH="/Users/husni/.antigravity/antigravity/bin:$PATH"
+export PATH="/Users/husni/.bun/bin:$PATH"
+export PATH="/Users/husni/.codeium/windsurf/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/husni/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Android / React Native
+
+export ANDROID_SDK_ROOT=$HOME/Library/Android/sdk
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export CHROME_EXECUTABLE="/Applications/Arc.app/Contents/MacOS/Arc"
+
+{{ end }}# Go
+
+export GO111MODULE=on
+{{ if eq .machine "laptop" }}export GOOS=darwin
+export GOARCH=arm64
+{{ end }}
+# Where `go install` puts a binary. Unset, it follows the active toolchain —
+# under mise that is .../installs/go/<version>/bin, which is on PATH but moves
+# every time the Go version does, taking every installed binary off PATH with
+# it. ~/.local/bin is already on PATH (top of this file) and does not move.
+export GOBIN="$HOME/.local/bin"
+
+{{ if eq .machine "laptop" }}# Python / PyTorch
+
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+
+{{ end }}# Kubernetes
+
+export KUBECONFIG=$HOME/.kube/config
+
+# Screen
+
+export SCREENDIR=$HOME/.screen
+
+# ------------------------------------------------------------------------------
+# Claude Code
+# ------------------------------------------------------------------------------
+
+# OTel: dynamic hostname per machine
+export OTEL_RESOURCE_ATTRIBUTES="host.name=$(hostname),app.name=claude-code"
+
+# ==============================================================================
+# Secrets — the one place they live. chmod 600. Referenced as ${VAR} from
+# ~/.mcp.json.
+# ==============================================================================
+
+[ -f "$HOME/.zshrc-secrets" ] && . "$HOME/.zshrc-secrets"
+
+# Vite+ bin (https://viteplus.dev)
+[ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
+
+# bash-style: unmatched glob passes literally instead of erroring
+[ -n "$ZSH_VERSION" ] && unsetopt nomatch
+
+# Machine-local, unmanaged exports (work, private infrastructure).
+[ -f "$HOME/.zshenv.local" ] && . "$HOME/.zshenv.local"

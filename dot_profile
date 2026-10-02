@@ -1,0 +1,6 @@
+# Login shells that are not zsh: bash reads this (no ~/.bash_profile), sh reads it too.
+if [ -n "$BASH_VERSION" ]; then
+  [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+else
+  [ -f "$HOME/.zshenv" ] && . "$HOME/.zshenv"
+fi

@@ -1,0 +1,10 @@
+[tools]
+direnv = "2.35.0"
+python = "3.12.15"
+rust = "1.97.1"
+node = "24.11.0"
+"ubi:github/github-mcp-server" = "0.17.1"
+ruff = "0.8.4"
+"npm:pyright" = "1.1.408"
+java = "21.0.2"
+go = "1.26.8"

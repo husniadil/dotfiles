@@ -1,0 +1,22 @@
+# Per-machine exclusions. Entries are target paths relative to $HOME.
+
+{{- if eq .machine "cloud" }}
+# The cloud harness keeps its GitHub proxy settings in root's global gitconfig.
+.gitconfig
+# Agents in cloud sessions run bash with the environment's own variables.
+.zshenv
+.zshrc
+{{- end }}
+
+{{- if ne .machine "laptop" }}
+# Global tool fallbacks. Projects pin their own versions in .tool-versions.
+.config/mise/config.toml
+# Laptop-only startup files. Linux machines keep their distro defaults.
+.zprofile
+.bashrc
+.profile
+{{- end }}
+
+# Bootstrap scripts run before chezmoi exists; they are not dotfiles.
+bootstrap
+bootstrap/**

@@ -1,0 +1,32 @@
+{{- if eq .machine "exe" }}
+# zsh on the exe.dev VMs, pinned to exact commits. The laptop keeps its own
+# oh-my-zsh checkout. To update, change a commit here and apply.
+
+# ohmyzsh master as of 2026-09-29
+[".oh-my-zsh"]
+    type = "archive"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/4d4cfc287e9d887b81242c0e431b5f49f9cec5c1.tar.gz"
+    stripComponents = 1
+
+[".config/zsh/custom/themes/zenith.zsh-theme"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/husniadil/zenith-oh-my-zsh-theme/b632d1a56fbfeb11dd13143f81cd23108b476d77/zenith.zsh-theme"
+
+# v0.7.1
+[".config/zsh/custom/plugins/zsh-autosuggestions"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/e52ee8ca55bcc56a17c828767a3f98f22a68d4eb.tar.gz"
+    stripComponents = 1
+
+# 0.8.0
+[".config/zsh/custom/plugins/zsh-syntax-highlighting"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-syntax-highlighting/archive/db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e.tar.gz"
+    stripComponents = 1
+
+# v1.56
+[".config/zsh/custom/plugins/fast-syntax-highlighting"]
+    type = "archive"
+    url = "https://github.com/zdharma-continuum/fast-syntax-highlighting/archive/5ecd353c81214f82bdeca5483fab6ccc5a2d5494.tar.gz"
+    stripComponents = 1
+{{- end }}

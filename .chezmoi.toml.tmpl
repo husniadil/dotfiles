@@ -1,0 +1,14 @@
+{{- /* Which kind of machine this is. Templates branch on .machine. */ -}}
+{{- $machine := env "CHEZMOI_MACHINE" -}}
+{{- if not $machine -}}
+{{-   if eq .chezmoi.os "darwin" -}}
+{{-     $machine = "laptop" -}}
+{{-   else if stat "/opt/claude-code" -}}
+{{-     $machine = "cloud" -}}
+{{-   else -}}
+{{-     $machine = "exe" -}}
+{{-   end -}}
+{{- end -}}
+
+[data]
+  machine = {{ $machine | quote }}
