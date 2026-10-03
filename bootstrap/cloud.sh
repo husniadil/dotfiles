@@ -29,6 +29,16 @@ patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 /usr/local/bin/chezmoi
 rm -rf "$work"
 chezmoi --version
 
+# What the media skills run (analyzing-video, transcribe-audio,
+# youtube-transcript). yt-dlp comes from PyPI and deno from npm, since
+# GitHub release downloads are blocked here. deno 2.9.6 matches exe.sh.
+if ! command -v ffmpeg >/dev/null; then
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg
+fi
+command -v yt-dlp >/dev/null || UV_TOOL_BIN_DIR=/usr/local/bin uv tool install --quiet yt-dlp
+command -v deno >/dev/null || npm install -g --silent deno@2.9.6
+
 CHEZMOI_MACHINE=cloud chezmoi init "$repo"
 if [ -n "${DOTFILES_REF:-}" ]; then
   chezmoi git -- checkout --quiet "$DOTFILES_REF"
