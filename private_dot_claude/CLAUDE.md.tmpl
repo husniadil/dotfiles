@@ -2,7 +2,7 @@
 
 {{ if eq .machine "exe" }}@~/.config/shelley/AGENTS.md
 
-{{ end }}{{ if eq .machine "laptop" }}@~/.claude/personal.md
+{{ end }}{{ if stat (joinPath .chezmoi.homeDir ".claude/personal.md") }}@~/.claude/personal.md
 
 {{ end }}## Language
 
