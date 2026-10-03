@@ -112,6 +112,8 @@ My explicit instruction for the current task overrides this list where it is saf
   - Unquoted `$VAR` is not word-split. `CMD="env -u X"; $CMD foo` runs a program literally named `env -u X`. Use an array (`cmd=(env -u X); "${cmd[@]}" foo`) or write the command out.
   - `PIPESTATUS` does not exist; it is lowercase `pipestatus`, 1-indexed (`${pipestatus[1]}`). Arrays are 1-indexed everywhere.
   - `read -a` is `read -A`. `status` is read-only, so never use it as a variable name.
+  - `path` is tied to `PATH`: `path=$(...)` replaces the whole PATH, and every command after it is "command not found". The same goes for `fpath`, `cdpath` and `manpath`. Pick another name.
+  - `ssh host '...'` runs in the remote user's login shell, which is zsh on the exe.dev VMs, so these rules apply there too. Send a bash script as `ssh host bash -s <<'EOF'`.
 {{ end }}
 ## Repository safety
 
