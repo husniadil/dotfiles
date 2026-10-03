@@ -1,0 +1,15 @@
+# The personal skills and commands now come from the husniadil-skills plugin
+# (github.com/husniadil/skills), which claude.ai syncs into Claude Code
+# sessions signed in to the account. Earlier versions of these dotfiles
+# copied them here.
+.claude/commands/ask-user-question.md
+.claude/commands/audit.md
+.claude/commands/commit-all.md
+.claude/commands/fix-all.md
+.claude/commands/gate.md
+.claude/commands/pre-compact.md
+.claude/commands/review-plan.md
+.claude/skills/analyzing-video
+.claude/skills/goal-prompt
+.claude/skills/transcribe-audio
+.claude/skills/youtube-transcript
