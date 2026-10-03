@@ -78,7 +78,8 @@ echo ""
 # {text, segments} shape, so the audio agent reads it unchanged.
 TRANSCRIBE="${HOME}/.claude/skills/transcribe-audio/scripts/transcribe.sh"
 
-if [[ -n "${GROQ_API_KEY:-}" && -x "$TRANSCRIBE" ]]; then
+# A GROQ_BASE_URL proxy holds the key at its own edge, so no key is set here.
+if [[ ( -n "${GROQ_API_KEY:-}" || -n "${GROQ_BASE_URL:-}" ) && -x "$TRANSCRIBE" ]]; then
     # This script speaks whisper's five model names. Groq has two, so the
     # small ones map to turbo and the big ones to large-v3.
     case "$MODEL" in
@@ -104,7 +105,7 @@ elif command -v whisper &>/dev/null; then
     ls -la "${OUTPUT_DIR}"/audio.{txt,json,srt,vtt,tsv} 2>/dev/null || true
 else
     echo "WARNING: no transcriber available."
-    echo "Set GROQ_API_KEY for hosted transcription, or install a local one"
+    echo "Set GROQ_API_KEY or GROQ_BASE_URL for hosted transcription, or install a local one"
     echo "with: pip install openai-whisper"
     echo "Skipping transcription."
 fi
