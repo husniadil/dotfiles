@@ -1,0 +1,3 @@
+[terminal]
+# The systemd user manager keeps the login shell it saw at boot, so name zsh here.
+default_shell = "/usr/bin/zsh"

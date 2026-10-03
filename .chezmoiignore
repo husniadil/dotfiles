@@ -17,6 +17,11 @@
 .profile
 {{- end }}
 
+{{- if ne .machine "exe" }}
+# herdr on the exe.dev VMs only. The laptop keeps its own herdr config.
+.config/herdr/config.toml
+{{- end }}
+
 # Bootstrap scripts run before chezmoi exists; they are not dotfiles.
 bootstrap
 bootstrap/**
