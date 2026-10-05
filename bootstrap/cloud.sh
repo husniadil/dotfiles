@@ -39,6 +39,19 @@ fi
 command -v yt-dlp >/dev/null || UV_TOOL_BIN_DIR=/usr/local/bin uv tool install --quiet yt-dlp
 command -v deno >/dev/null || npm install -g --silent deno@2.9.6
 
+# Tailscale, which ~/.claude/hooks/tailscale-up.sh joins the session to the
+# tailnet with. pkgs.tailscale.com answers here where GitHub releases do not.
+# 1.102.4, the amd64 static tarball, pinned by the digest it publishes.
+if ! command -v tailscaled >/dev/null; then
+  tailscale_digest=50748df1045e60b5b695f19f4c56b0da36c019948b440fb456b6584a50f0d8b9
+  work="$(mktemp -d)"
+  curl -fsSL -o "$work/tailscale.tgz" https://pkgs.tailscale.com/stable/tailscale_1.102.4_amd64.tgz
+  echo "$tailscale_digest  $work/tailscale.tgz" | sha256sum -c --quiet -
+  tar -xzf "$work/tailscale.tgz" -C "$work" --strip-components=1
+  install -m 0755 "$work/tailscale" "$work/tailscaled" /usr/local/bin/
+  rm -rf "$work"
+fi
+
 CHEZMOI_MACHINE=cloud chezmoi init "$repo"
 if [ -n "${DOTFILES_REF:-}" ]; then
   chezmoi git -- checkout --quiet "$DOTFILES_REF"

@@ -22,6 +22,12 @@
 .config/herdr/config.toml
 {{- end }}
 
+{{- if ne .machine "cloud" }}
+# The tailnet join is a cloud session's. Other machines run tailscale themselves.
+.claude/hooks
+.claude/hooks/**
+{{- end }}
+
 # Bootstrap scripts run before chezmoi exists; they are not dotfiles.
 bootstrap
 bootstrap/**

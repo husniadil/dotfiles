@@ -497,4 +497,20 @@ MANAGED_JSON
 extra='{}'
 {{ end -}}
 
-printf '%s' "$current" | jq --argjson base "$base" --argjson extra "$extra" '. * $base * $extra'
+{{ if eq .machine "cloud" -}}
+# The cloud session's tailnet join (~/.claude/hooks/tailscale-up.sh).
+hooks='[{"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/tailscale-up.sh", "async": true}]}]'
+{{ else -}}
+hooks='[]'
+{{ end -}}
+
+# SessionStart groups are appended, each in place of one carrying its own
+# command, rather than merged with *: that replaces an array whole, and
+# agamemnon keeps its own SessionStart hook in the same list.
+printf '%s' "$current" | jq --argjson base "$base" --argjson extra "$extra" --argjson hooks "$hooks" '
+  . * $base * $extra
+  | if $hooks == [] then . else
+      ([$hooks[].hooks[].command]) as $mine
+      | .hooks.SessionStart = [(.hooks.SessionStart // [])[]
+          | select(any(.hooks[]?; .command as $c | $mine | index($c)) | not)] + $hooks
+    end'
