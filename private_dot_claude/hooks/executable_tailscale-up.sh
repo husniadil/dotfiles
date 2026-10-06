@@ -37,11 +37,29 @@ for _ in $(seq 150); do
   case "$(backend)" in Running | NeedsLogin | NeedsMachineAuth | Stopped) break ;; esac
   sleep 0.2
 done
-[ "$(backend)" = "Running" ] && exit 0
 
 # Sessions run side by side, so each node is named after its own session.
 id="${CLAUDE_CODE_REMOTE_SESSION_ID:-$(hostname)}"
 name="claude-$(printf '%s' "${id: -8}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9')"
+
+# Running is not enough. A node the control plane has removed (the key's
+# nodes are ephemeral) still says Running from its saved state, offline,
+# with no peers and an AuthURL to log in again: a session resumed after a
+# night sat off the tailnet that way (2026-10-06). So wait for the node to
+# be online, or to be asked to log in, and then log the saved node in with
+# the key. One that is neither by the end of the wait is left as it is.
+if [ "$(backend)" = "Running" ]; then
+  for _ in $(seq 150); do
+    state=$(tailscale status --json 2>/dev/null || echo '{}')
+    [ "$(jq -r '.Self.Online // false' <<<"$state")" = true ] && exit 0
+    if [ -n "$(jq -r '.AuthURL // empty' <<<"$state")" ]; then
+      exec tailscale login --auth-key="$TS_AUTHKEY" --hostname="$name" --timeout=120s
+    fi
+    sleep 0.2
+  done
+  exit 0
+fi
+
 # Registering through the egress proxy took about 30 seconds (measured
 # 2026-10-05), so the wait is longer than that.
 tailscale up --auth-key="$TS_AUTHKEY" --hostname="$name" --timeout=120s
