@@ -52,9 +52,39 @@ if ! command -v tailscaled >/dev/null; then
   rm -rf "$work"
 fi
 
+# socat, which ~/.claude/hooks/tailscale-up.sh forwards claude-mem's worker
+# port with.
+if ! command -v socat >/dev/null; then
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq socat
+fi
+
 CHEZMOI_MACHINE=cloud chezmoi init "$repo"
 if [ -n "${DOTFILES_REF:-}" ]; then
   chezmoi git -- checkout --quiet "$DOTFILES_REF"
 fi
 chezmoi apply
 echo "dotfiles at $(chezmoi git -- rev-parse --short HEAD) applied for $(chezmoi data --format json | jq -r .machine)"
+
+# claude-mem, the fork build the Mac runs (husniadil/claude-mem, husni/main),
+# against the worker on proxenos. A cloud session loads no plugin installed on
+# the Mac, so it is installed here. The worker is reached through the
+# forwarder that ~/.claude/hooks/tailscale-up.sh starts on 127.0.0.1:37701,
+# and REMOTE_WORKER_ONLY keeps the hooks from starting a worker of their own
+# when it does not answer.
+plugins="$HOME/.claude/plugins"
+if ! jq -e '.thedotmack' "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
+  claude plugin marketplace add https://github.com/husniadil/claude-mem.git#husni/main
+fi
+if ! jq -e '.plugins["claude-mem@thedotmack"]' "$plugins/installed_plugins.json" >/dev/null 2>&1; then
+  claude plugin install claude-mem@thedotmack
+fi
+mkdir -p "$HOME/.claude-mem"
+cat >"$HOME/.claude-mem/settings.json" <<'EOF'
+{
+  "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
+  "CLAUDE_MEM_WORKER_PORT": "37701",
+  "CLAUDE_MEM_REMOTE_WORKER_ONLY": "true",
+  "CLAUDE_MEM_MODE": "code"
+}
+EOF

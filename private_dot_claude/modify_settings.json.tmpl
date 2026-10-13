@@ -498,11 +498,14 @@ extra='{}'
 {{ end -}}
 
 {{ if eq .machine "cloud" -}}
-# The cloud session's tailnet join (~/.claude/hooks/tailscale-up.sh), and the
+# The cloud session's tailnet join (~/.claude/hooks/tailscale-up.sh), which
+# claude-mem's worker is reached through, so it runs to its end before the
+# session's first answer: about 30 seconds for a new node, at most the two
+# minutes `tailscale up` waits, and then claude-mem's context. And the
 # agamemnon checkout's own hook when the session carries several repositories
 # (~/.claude/hooks/agamemnon-up.sh). That one installs Bun, the workspace and
 # herdr on a new container, which takes longer than a hook's default minute.
-hooks='[{"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/tailscale-up.sh", "async": true}]}, {"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/agamemnon-up.sh", "timeout": 600}]}]'
+hooks='[{"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/tailscale-up.sh", "timeout": 300}]}, {"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/agamemnon-up.sh", "timeout": 600}]}]'
 {{ else -}}
 hooks='[]'
 {{ end -}}
