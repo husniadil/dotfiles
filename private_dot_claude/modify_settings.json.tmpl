@@ -505,7 +505,10 @@ extra='{}'
 # agamemnon checkout's own hook when the session carries several repositories
 # (~/.claude/hooks/agamemnon-up.sh). That one installs Bun, the workspace and
 # herdr on a new container, which takes longer than a hook's default minute.
-hooks='[{"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/tailscale-up.sh", "timeout": 300}]}, {"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/agamemnon-up.sh", "timeout": 600}]}]'
+# And an Agamemnon served from the VM's package in every other session
+# (~/.claude/hooks/agamemnon-serve.sh), which returns at once and works in
+# the background.
+hooks='[{"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/tailscale-up.sh", "timeout": 300}]}, {"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/agamemnon-up.sh", "timeout": 600}]}, {"matcher": "startup|resume", "hooks": [{"type": "command", "command": "$HOME/.claude/hooks/agamemnon-serve.sh", "timeout": 30}]}]'
 {{ else -}}
 hooks='[]'
 {{ end -}}
