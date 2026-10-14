@@ -79,12 +79,19 @@ echo "dotfiles at $(chezmoi git -- rev-parse --short HEAD) applied for $(chezmoi
 # forwarder that ~/.claude/hooks/tailscale-up.sh starts on 127.0.0.1:37701,
 # and WORKER_AUTOSTART=false keeps the hooks from starting a worker of their
 # own when it does not answer.
+# A container that already has the plugin is updated to husni/main as well: a
+# cloud session on an older build than the worker's can lose what it captures,
+# as 13.39.2 did, so an update that fails fails the session.
 plugins="$HOME/.claude/plugins"
 if ! jq -e '.thedotmack' "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
   claude plugin marketplace add https://github.com/husniadil/claude-mem.git#husni/main
+else
+  claude plugin marketplace update thedotmack
 fi
 if ! jq -e '.plugins["claude-mem@thedotmack"]' "$plugins/installed_plugins.json" >/dev/null 2>&1; then
   claude plugin install claude-mem@thedotmack
+else
+  claude plugin update claude-mem@thedotmack
 fi
 mkdir -p "$HOME/.claude-mem"
 cat >"$HOME/.claude-mem/settings.json" <<'EOF'
