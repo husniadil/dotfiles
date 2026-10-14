@@ -52,6 +52,55 @@ if ! command -v tailscaled >/dev/null; then
   rm -rf "$work"
 fi
 
+# Agamemnon's linux-x64 package, which ~/.claude/hooks/agamemnon-serve.sh
+# serves from every session. It comes from the Agamemnon VM over the tailnet
+# (the repository is private, and the GitHub proxy reaches a session's own
+# repositories alone), at about 0.4 MB/s through the egress proxy's DERP
+# relay: two to three minutes for its 63 MB (measured 2026-10-14). Fetched
+# here, it is in the environment's cache and a new session serves within a
+# minute. The hook fetches it itself when this did not run or finish, or when
+# the VM has built another version since.
+#
+# A node of its own joins for the fetch, its state in a directory deleted
+# before the snapshot is taken, and logs out after, which removes it, since
+# the key's nodes are ephemeral. It runs beside the rest of the setup and is
+# cut off at 200 s, so the setup stays inside the cache's five minutes.
+agamemnon_prefetch=""
+if [ -n "${TS_AUTHKEY:-}" ]; then
+  timeout -k 10 200 bash -s >"$HOME/agamemnon-prefetch.log" 2>&1 <<'PREFETCH' &
+set -euo pipefail
+dir="$(mktemp -d)"
+sock="$dir/tailscaled.sock"
+pid=""
+ts() { tailscale --socket="$sock" "$@"; }
+finish() {
+  ts logout >/dev/null 2>&1 || true
+  [ -z "$pid" ] || kill "$pid" 2>/dev/null || true
+  rm -rf "$dir"
+}
+trap finish EXIT
+trap 'exit 1' TERM
+tailscaled --tun=userspace-networking --statedir="$dir/state" --socket="$sock" \
+  --socks5-server=127.0.0.1:1056 >"$dir/tailscaled.log" 2>&1 &
+pid=$!
+for _ in $(seq 50); do ts status >/dev/null 2>&1 && break; [ "$(ts status --json 2>/dev/null | jq -r '.BackendState // empty')" = NeedsLogin ] && break; sleep 0.2; done
+ts up --auth-key="$TS_AUTHKEY" --hostname=claude-setup --timeout=90s
+dist="https://agamemnon.$(ts status --json | jq -r .MagicDNSSuffix):8443"
+fetch() { curl -fsS --retry 3 --retry-delay 2 -m 180 -x socks5h://127.0.0.1:1056 "$dist/$1"; }
+version=$(fetch VERSION)
+fetch agamemnon-linux-x64.tar.gz >"$dir/package.tar.gz"
+echo "$(fetch agamemnon-linux-x64.tar.gz.sha256 | awk '{print $1}')  $dir/package.tar.gz" | sha256sum -c --quiet -
+lib="$HOME/.local/lib/agamemnon"
+rm -rf "$lib"
+mkdir -p "$lib"
+tar -C "$lib" -xzf "$dir/package.tar.gz"
+echo "agamemnon $version in $lib"
+PREFETCH
+  agamemnon_prefetch=$!
+else
+  echo "agamemnon: no TS_AUTHKEY in the setup, so each session's hook fetches the package"
+fi
+
 # socat, which ~/.claude/hooks/tailscale-up.sh forwards claude-mem's worker
 # port with.
 if ! command -v socat >/dev/null; then
@@ -88,3 +137,13 @@ cat >"$HOME/.claude-mem/settings.json" <<'EOF'
   "CLAUDE_MEM_MODE": "code"
 }
 EOF
+
+if [ -n "$agamemnon_prefetch" ]; then
+  if wait "$agamemnon_prefetch"; then
+    tail -n 1 "$HOME/agamemnon-prefetch.log"
+  else
+    echo "agamemnon: the prefetch did not finish, so each session's hook fetches the package"
+    tail -n 3 "$HOME/agamemnon-prefetch.log"
+  fi
+  rm -f "$HOME/agamemnon-prefetch.log"
+fi

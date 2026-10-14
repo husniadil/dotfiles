@@ -10,9 +10,11 @@
 # proxy reaches only the session's own repositories. So the linux-x64 package
 # comes from the Agamemnon VM over the tailnet: `tailscale serve` of its
 # ~/agm-dist on port 8443, repacked there whenever that VM's build changes,
-# and the one port tag:claude-cloud may reach on it. It is unpacked under
-# ~/.local/lib/agamemnon, which a resumed session keeps, and fetched again
-# only when the VM serves another version.
+# and the one port tag:claude-cloud may reach on it. The environment's setup
+# (bootstrap/cloud.sh) usually leaves it in ~/.local/lib/agamemnon already,
+# in the cached snapshot. This fetches it only when it is missing there or the
+# VM serves another version, which takes two to three minutes over the DERP
+# relay, and a resumed session keeps what it fetched.
 #
 # The node takes about 30 seconds to join (tailscale-up.sh, side by side with
 # this) and the package a few more to fetch, so the work runs in the
