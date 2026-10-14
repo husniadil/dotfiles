@@ -1,0 +1,13 @@
+#!/bin/sh
+# Merge the claude-mem worker settings these dotfiles own into
+# ~/.claude-mem/settings.json and keep the rest, because the worker writes the
+# same file and it holds provider keys that stay out of this repository.
+set -eu
+current="$(cat)"
+[ -n "$current" ] || current='{}'
+
+# Tier routing sends a batch whose observations all come from Read, Glob, Grep,
+# LS or ListMcpResourcesTool to this model. Its default, the alias "haiku",
+# reaches the provider daemon as claude-haiku-5-5, which the Codex account
+# refuses with a 400.
+printf '%s' "$current" | jq '. + {"CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna"}'

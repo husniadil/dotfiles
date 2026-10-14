@@ -28,6 +28,13 @@
 .claude/hooks/**
 {{- end }}
 
+{{- if ne .chezmoi.hostname "proxenos" }}
+# The claude-mem worker runs on proxenos alone. Every other machine is a client
+# of it and keeps its own claude-mem settings.
+.claude-mem
+.claude-mem/**
+{{- end }}
+
 # Bootstrap scripts run before chezmoi exists; they are not dotfiles.
 bootstrap
 bootstrap/**
