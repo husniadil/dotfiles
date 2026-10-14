@@ -70,8 +70,8 @@ echo "dotfiles at $(chezmoi git -- rev-parse --short HEAD) applied for $(chezmoi
 # against the worker on proxenos. A cloud session loads no plugin installed on
 # the Mac, so it is installed here. The worker is reached through the
 # forwarder that ~/.claude/hooks/tailscale-up.sh starts on 127.0.0.1:37701,
-# and REMOTE_WORKER_ONLY keeps the hooks from starting a worker of their own
-# when it does not answer.
+# and WORKER_AUTOSTART=false keeps the hooks from starting a worker of their
+# own when it does not answer.
 plugins="$HOME/.claude/plugins"
 if ! jq -e '.thedotmack' "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
   claude plugin marketplace add https://github.com/husniadil/claude-mem.git#husni/main
@@ -84,7 +84,7 @@ cat >"$HOME/.claude-mem/settings.json" <<'EOF'
 {
   "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
   "CLAUDE_MEM_WORKER_PORT": "37701",
-  "CLAUDE_MEM_REMOTE_WORKER_ONLY": "true",
+  "CLAUDE_MEM_WORKER_AUTOSTART": "false",
   "CLAUDE_MEM_MODE": "code"
 }
 EOF
