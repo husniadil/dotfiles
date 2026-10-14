@@ -6,8 +6,19 @@ set -eu
 current="$(cat)"
 [ -n "$current" ] || current='{}'
 
+# The worker runs here as the systemd user unit claude-mem.service, on loopback
+# port 37701, so nothing here may start one of its own. Its observer is Claude
+# Code on gpt-6-luna, reached through the proxenos daemon on this machine.
+#
 # Tier routing sends a batch whose observations all come from Read, Glob, Grep,
-# LS or ListMcpResourcesTool to this model. Its default, the alias "haiku",
-# reaches the provider daemon as claude-haiku-5-5, which the Codex account
-# refuses with a 400.
-printf '%s' "$current" | jq '. + {"CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna"}'
+# LS or ListMcpResourcesTool to CLAUDE_MEM_TIER_SIMPLE_MODEL. Its default, the
+# alias "haiku", reaches the provider daemon as claude-haiku-5-5, which the
+# Codex account refuses with a 400.
+printf '%s' "$current" | jq '. + {
+  "CLAUDE_MEM_MODEL": "gpt-6-luna",
+  "CLAUDE_MEM_PROVIDER": "claude",
+  "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
+  "CLAUDE_MEM_WORKER_PORT": "37701",
+  "CLAUDE_MEM_WORKER_AUTOSTART": "false",
+  "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna"
+}'
