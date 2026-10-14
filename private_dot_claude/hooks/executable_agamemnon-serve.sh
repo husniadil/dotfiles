@@ -10,11 +10,14 @@
 # proxy reaches only the session's own repositories. So the linux-x64 package
 # comes from the Agamemnon VM over the tailnet: `tailscale serve` of its
 # ~/agm-dist on port 8443, repacked there whenever that VM's build changes,
-# and the one port tag:claude-cloud may reach on it. The environment's setup
-# (bootstrap/cloud.sh) usually leaves it in ~/.local/lib/agamemnon already,
-# in the cached snapshot. This fetches it only when it is missing there or the
-# VM serves another version, which takes two to three minutes over the DERP
-# relay, and a resumed session keeps what it fetched.
+# and the one port tag:claude-cloud may reach on it. It is unpacked under
+# ~/.local/lib/agamemnon, which a resumed session keeps, and fetched again
+# only when the VM serves another version. The fetch, 50 MB of zstd over the
+# DERP relay at about 0.4 MB/s, is most of the two to three minutes a new
+# session takes to serve. Fetching it in the environment's setup instead, into
+# the cached snapshot, did not run: no node from the setup joined the tailnet
+# (2026-10-14), where the same fetch run in a session did, so the setup
+# script appears not to see TS_AUTHKEY.
 #
 # The node takes about 30 seconds to join (tailscale-up.sh, side by side with
 # this) and the package a few more to fetch, so the work runs in the
@@ -73,11 +76,12 @@ serve() {
   have=$("$lib/agamemnon" --version 2>/dev/null | awk '{print $2}' || true)
   if [ "$have" != "$want" ]; then
     tmp=$(mktemp -d)
-    fetch agamemnon-linux-x64.tar.gz >"$tmp/package.tar.gz"
-    sum=$(fetch agamemnon-linux-x64.tar.gz.sha256 | awk '{print $1}')
-    echo "$sum  $tmp/package.tar.gz" | sha256sum -c --quiet -
+    fetch agamemnon-linux-x64.tar.zst >"$tmp/package.tar.zst"
+    sum=$(fetch agamemnon-linux-x64.tar.zst.sha256 | awk '{print $1}')
+    echo "$sum  $tmp/package.tar.zst" | sha256sum -c --quiet -
     mkdir "$tmp/package"
-    tar -C "$tmp/package" -xzf "$tmp/package.tar.gz"
+    # Packed with a 128 MB window, which zstd reads only when told to.
+    zstd -dc --long=27 "$tmp/package.tar.zst" | tar -C "$tmp/package" -xf -
     mkdir -p "$(dirname "$lib")"
     rm -rf "$lib.old"
     [ ! -d "$lib" ] || mv "$lib" "$lib.old"
