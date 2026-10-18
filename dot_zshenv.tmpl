@@ -24,6 +24,8 @@ export NO_PROXY=localhost
 
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+# Plain ffmpeg is built without freetype, so it has no drawtext. ffmpeg-full is keg-only.
+export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
 export PATH="/Users/husni/.antigravity/antigravity/bin:$PATH"
 export PATH="/Users/husni/.codeium/windsurf/bin:$PATH"
 
