@@ -40,6 +40,10 @@ worker_up && up_at_start=true
 
 log="$HOME/.local/state/tailscale"
 mkdir -p "$log" /var/lib/tailscale
+# The key reaches tailscale as a file it reads, never on an argv, where every
+# process on the machine can read it while the login runs.
+keyfile="$log/authkey"
+(umask 077 && printf '%s' "$TS_AUTHKEY" >"$keyfile")
 
 # What the daemon says it is doing, or nothing when no daemon answers.
 backend() { tailscale status --json 2>/dev/null | jq -r '.BackendState // empty'; }
@@ -74,7 +78,7 @@ backend() { tailscale status --json 2>/dev/null | jq -r '.BackendState // empty'
       state=$(tailscale status --json 2>/dev/null || echo '{}')
       [ "$(jq -r '.Self.Online // false' <<<"$state")" = true ] && exit 0
       if [ -n "$(jq -r '.AuthURL // empty' <<<"$state")" ]; then
-        exec tailscale login --auth-key="$TS_AUTHKEY" --hostname="$name" --timeout=120s
+        exec tailscale login --auth-key="file:$keyfile" --hostname="$name" --timeout=120s
       fi
       sleep 0.2
     done
@@ -83,7 +87,7 @@ backend() { tailscale status --json 2>/dev/null | jq -r '.BackendState // empty'
 
   # Registering through the egress proxy took about 30 seconds (measured
   # 2026-10-05), so the wait is longer than that.
-  tailscale up --auth-key="$TS_AUTHKEY" --hostname="$name" --timeout=120s
+  tailscale up --auth-key="file:$keyfile" --hostname="$name" --timeout=120s
 ) >&2
 
 # The forwarder outlives the hook, as tailscaled does. Each connection is
