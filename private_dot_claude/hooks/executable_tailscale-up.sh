@@ -111,7 +111,9 @@ until worker_up; do
   sleep 1
 done
 
-# claude-mem's context hook, run the way its hooks/hooks.json runs it.
+# claude-mem's context hook: the command its hooks/hooks.json ends with. The
+# plugin root is read here from installed_plugins.json, where hooks.json
+# searches the plugin cache for it.
 root=$(jq -r '.plugins["claude-mem@thedotmack"] // [] | map(select(.scope == "user"))[0].installPath // empty' \
   "$HOME/.claude/plugins/installed_plugins.json")
 if [ -z "$root" ]; then

@@ -73,6 +73,13 @@ serve() {
   name=$(jq -r '.Self.DNSName // empty' <<<"$st")
   name=${name%.}
   say "online as $name after $((SECONDS - began)) s"
+  # A headless Chrome here (`agamemnon browser install`) is told to reach the
+  # server at this name, the one the certificate is for, and tailscaled runs
+  # without MagicDNS here, so the name resolved nowhere. The name is this
+  # machine's own, as agamemnon's scripts/cloud-serve.sh has it.
+  grep -qs "[[:space:]]$name\$" /etc/hosts ||
+    { echo "127.0.0.1 $name" >>/etc/hosts; } 2>/dev/null ||
+    say "/etc/hosts is not writable, so a Chrome here cannot reach https://$name:$port"
 
   # The certificate is asked for beside the package's download.
   mkdir -p "$tls"
