@@ -59,6 +59,9 @@ command -v direnv >/dev/null && eval "$(direnv hook zsh)"
 fpath=(~/.grok/completions/zsh $fpath)
 autoload -Uz compinit && compinit -C
 
+# bun completions, where bun's installer put them
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
 # ==============================================================================
 # Shell Customization
 # ==============================================================================
