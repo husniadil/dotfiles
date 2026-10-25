@@ -10,7 +10,9 @@
 # proxy reaches only the session's own repositories. So the linux-x64 package
 # comes from the Agamemnon VM over the tailnet: `tailscale serve` of its
 # ~/agm-dist on port 8443, repacked there whenever that VM's build changes,
-# and the one port tag:claude-cloud may reach on it. It is unpacked under
+# and the one port tag:claude-cloud may reach on it. Both are set up on that
+# VM by these dotfiles (dot_local/bin/executable_agm-dist-refresh, its
+# systemd timer, and run_onchange_after_agm-dist.sh.tmpl). It is unpacked under
 # ~/.local/lib/agamemnon, which a resumed session keeps, and fetched again
 # only when the VM serves another version. A new session served 3.5 and 4.5
 # minutes after its node came online in two runs (2026-10-14). Most of that is

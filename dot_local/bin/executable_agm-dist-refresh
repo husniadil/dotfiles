@@ -1,0 +1,24 @@
+#!/bin/bash
+# Pack the installed Agamemnon (~/.local/lib/agamemnon, which `agamemnon
+# update @exe.dev` replaces) into ~/agm-dist, which `tailscale serve` offers
+# on :8443 to the tailnet's cloud sessions (tag:claude-cloud). zstd -19 with a
+# 128 MB window (50 MB, where gzip made 63), since a cloud session fetches it
+# over a DERP relay at about 0.4 MB/s; it unpacks with `zstd -d --long=27`.
+# Does nothing while VERSION already names the installed build. VERSION is
+# written last, so a client that reads it finds that build's tarball and sum.
+set -euo pipefail
+src="$HOME/.local/lib/agamemnon"
+out="$HOME/agm-dist"
+ver=$("$src/agamemnon" --version | awk '{print $2}')
+[ -n "$ver" ]
+[ -f "$out/VERSION" ] && [ "$(cat "$out/VERSION")" = "$ver" ] && [ -f "$out/agamemnon-linux-x64.tar.zst" ] && exit 0
+tmp=$(mktemp -d "$HOME/.agm-dist-build.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+tar -C "$src" -cf - . | zstd -q -19 --long=27 -T0 -o "$tmp/agamemnon-linux-x64.tar.zst"
+(cd "$tmp" && sha256sum agamemnon-linux-x64.tar.zst >agamemnon-linux-x64.tar.zst.sha256)
+printf '%s\n' "$ver" >"$tmp/VERSION"
+mv -f "$tmp/agamemnon-linux-x64.tar.zst" "$out/"
+mv -f "$tmp/agamemnon-linux-x64.tar.zst.sha256" "$out/"
+mv -f "$tmp/VERSION" "$out/"
+rm -f "$out/agamemnon-linux-x64.tar.gz" "$out/agamemnon-linux-x64.tar.gz.sha256"
+echo "agm-dist: packed $ver"

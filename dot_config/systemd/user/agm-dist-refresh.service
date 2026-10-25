@@ -1,0 +1,6 @@
+[Unit]
+Description=Pack the installed Agamemnon for cloud sessions (~/agm-dist)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/agm-dist-refresh

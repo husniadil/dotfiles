@@ -1,0 +1,22 @@
+{{- if eq .chezmoi.hostname "agamemnon" -}}
+#!/bin/bash
+# The Agamemnon VM packs its installed build for cloud sessions
+# (agm-dist-refresh, every 5 minutes) and serves ~/agm-dist to the tailnet on
+# :8443, which is where agamemnon-serve.sh fetches the package from. Rendered
+# on that host alone, and run again when either unit changes:
+# timer {{ include "dot_config/systemd/user/agm-dist-refresh.timer" | sha256sum }}
+# service {{ include "dot_config/systemd/user/agm-dist-refresh.service" | sha256sum }}
+set -euo pipefail
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+systemctl --user daemon-reload
+systemctl --user enable --now agm-dist-refresh.timer
+
+dist="$HOME/agm-dist"
+mkdir -p "$dist"
+# Set only where it is missing, so a serve already there is left as it is.
+if ! tailscale serve status --json |
+  jq -e --arg d "$dist" '.TCP["8443"].HTTPS == true and any(.Web[]?; .Handlers["/"].Path == $d)' >/dev/null; then
+  tailscale serve --bg --yes --https=8443 "$dist" ||
+    sudo -n tailscale serve --bg --yes --https=8443 "$dist"
+fi
+{{ end -}}
