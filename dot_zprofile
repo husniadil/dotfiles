@@ -2,7 +2,11 @@
 [ -f "$HOME/.zprofile.local" ] && . "$HOME/.zprofile.local"
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="$HOME/.local/share/mise/shims:$PATH"
+# brew shellenv puts Homebrew's directories first, as /etc/zprofile's
+# path_helper did before it. ~/.zshenv is read again so its order wins in a
+# login shell that never reads ~/.zshrc, where keg-only ffmpeg-full has to
+# come before Homebrew's ffmpeg, which has no drawtext.
+. "$HOME/.zshenv"
 
 # Added by OrbStack: command-line tools and integration
 # This won't be added again if you remove it.

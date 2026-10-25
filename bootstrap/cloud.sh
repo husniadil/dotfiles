@@ -69,6 +69,9 @@ fi
 CHEZMOI_MACHINE=cloud chezmoi init "$repo"
 if [ -n "${DOTFILES_REF:-}" ]; then
   chezmoi git -- checkout --quiet "$DOTFILES_REF"
+  # The config was rendered from the default branch's template, so it is
+  # rendered again from the ref's.
+  CHEZMOI_MACHINE=cloud chezmoi init
 fi
 chezmoi apply
 echo "dotfiles at $(chezmoi git -- rev-parse --short HEAD) applied for $(chezmoi data --format json | jq -r .machine)"
@@ -83,10 +86,17 @@ echo "dotfiles at $(chezmoi git -- rev-parse --short HEAD) applied for $(chezmoi
 # cloud session on an older build than the worker's can lose what it captures,
 # as 13.39.2 did, so an update that fails fails the session.
 plugins="$HOME/.claude/plugins"
-if ! jq -e '.thedotmack' "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
-  claude plugin marketplace add https://github.com/husniadil/claude-mem.git#husni/main
-else
+fork=https://github.com/husniadil/claude-mem.git
+# Checked by its source, since a marketplace of the same name from anywhere
+# else (upstream's) updates to that source and never to husni/main.
+if jq -e --arg fork "$fork" '.thedotmack.source | .url == $fork and .ref == "husni/main"' \
+  "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
   claude plugin marketplace update thedotmack
+else
+  if jq -e '.thedotmack' "$plugins/known_marketplaces.json" >/dev/null 2>&1; then
+    claude plugin marketplace remove thedotmack
+  fi
+  claude plugin marketplace add "$fork#husni/main"
 fi
 if ! jq -e '.plugins["claude-mem@thedotmack"]' "$plugins/installed_plugins.json" >/dev/null 2>&1; then
   claude plugin install claude-mem@thedotmack
