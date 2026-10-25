@@ -9,8 +9,8 @@ input=$(cat)
 name=$(jq -r '.name // empty' <<<"$input")
 cwd=$(jq -r '.cwd // empty' <<<"$input")
 
-# A project that ships its own WorktreeCreate hook (monobox does) owns the
-# location. Claude Code takes the first non-empty path, so print nothing.
+# A project that ships its own WorktreeCreate hook owns the location. Claude
+# Code takes the first non-empty path, so print nothing.
 project=${CLAUDE_PROJECT_DIR:-$(git -C "$cwd" rev-parse --show-toplevel)}
 for settings in "$project/.claude/settings.json" "$project/.claude/settings.local.json"; do
   if [[ -f "$settings" ]] && jq -e '.hooks.WorktreeCreate' "$settings" >/dev/null 2>&1; then
@@ -72,11 +72,17 @@ if git -C "$primary" show-ref --verify --quiet "refs/heads/$branch"; then
 fi
 
 mkdir -p "$(dirname "$target")"
-if [[ -f "$primary/bob-cli/index.js" ]]; then
-  # monobox: bob worktree:add also bootstraps the gitignored files Bob needs.
-  (cd "$primary" && "$primary/bob-cli/index.js" worktree:add "$target" -b "$branch" "$base") >&2
-else
-  git -C "$primary" worktree add -b "$branch" "$target" "$base" >&2
+worktree_add() {
+  git -C "$primary" worktree add -b "$branch" "$target" "$base"
+}
+# A repository whose own tool adds a worktree (and bootstraps what it needs)
+# is named in an unmanaged file beside this one, which redefines worktree_add
+# for it with $primary, $target, $branch and $base in hand.
+local_add="$HOME/.claude/hooks/worktree-create.local.sh"
+if [[ -f "$local_add" ]]; then
+  # shellcheck source=/dev/null
+  source "$local_add"
 fi
+worktree_add >&2
 
 printf '%s\n' "$target"
