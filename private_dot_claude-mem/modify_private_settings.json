@@ -7,7 +7,9 @@ current="$(cat)"
 [ -n "$current" ] || current='{}'
 
 # The worker runs here as the systemd user unit claude-mem.service, on loopback
-# port 37701, so nothing here may start one of its own. Its observer is Claude
+# port 37701, so nothing here may start one of its own. The other machines
+# reach it through the tailnet forward run_onchange_after_claude-mem-tailnet.sh.tmpl
+# sets up. Its observer is Claude
 # Code on gpt-6-luna, reached through the proxenos daemon on this machine.
 #
 # Tier routing sends a batch whose observations all come from Read, Glob, Grep,

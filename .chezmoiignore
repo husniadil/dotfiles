@@ -28,6 +28,14 @@
 .claude/hooks/**
 {{- end }}
 
+{{- if ne .chezmoi.hostname "agamemnon" }}
+# The package cloud sessions fetch is packed on the Agamemnon VM alone
+# (run_onchange_after_agm-dist.sh.tmpl serves it).
+.local/bin/agm-dist-refresh
+.config/systemd
+.config/systemd/**
+{{- end }}
+
 {{- if ne .chezmoi.hostname "proxenos" }}
 # The claude-mem worker runs on proxenos alone. Every other machine is a client
 # of it and keeps its own claude-mem settings.
