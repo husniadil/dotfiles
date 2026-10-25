@@ -1,0 +1,13 @@
+{{- if eq .chezmoi.hostname "proxenos" -}}
+#!/bin/bash
+# The claude-mem worker listens on 127.0.0.1:37701 here (claude-mem settings),
+# and the other machines reach it over the tailnet: tailscale serve forwards
+# the node's :37701 to it, tailnet only. Rendered on this host alone. Set only
+# where it is missing, so a forward already there is left as it is.
+set -euo pipefail
+if ! tailscale serve status --json |
+  jq -e '.TCP["37701"].TCPForward == "127.0.0.1:37701"' >/dev/null; then
+  tailscale serve --bg --yes --tcp=37701 tcp://127.0.0.1:37701 ||
+    sudo -n tailscale serve --bg --yes --tcp=37701 tcp://127.0.0.1:37701
+fi
+{{ end -}}
