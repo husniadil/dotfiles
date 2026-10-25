@@ -23,8 +23,9 @@
 {{- end }}
 
 {{- if ne .machine "cloud" }}
-# The tailnet join is a cloud session's. Other machines run tailscale themselves.
-# The worktree hooks are every other machine's.
+# The session hooks (the tailnet join, and serving Agamemnon on it) are a cloud
+# session's. Other machines run tailscale themselves. The worktree hooks are
+# every other machine's.
 .claude/hooks/*
 !.claude/hooks/worktree-*.sh
 {{- else }}

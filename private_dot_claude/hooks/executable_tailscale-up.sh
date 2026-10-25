@@ -1,9 +1,9 @@
 #!/bin/bash
 # Join this cloud session to the tailnet when the environment carries
-# TS_AUTHKEY, and do nothing without it. The key is reusable, ephemeral,
-# pre-approved and tagged tag:claude-cloud, so the node is a tagged device
-# that the tag's grants limit, and it leaves the tailnet 30 to 60 minutes
-# after the session ends.
+# TS_AUTHKEY, and say without it that the session has no memory context. The
+# key is reusable, ephemeral, pre-approved and tagged tag:claude-cloud, so the
+# node is a tagged device that the tag's grants limit, and it leaves the
+# tailnet 30 to 60 minutes after the session ends.
 #
 # The sandbox has no systemd and no UDP out. tailscaled runs in userspace
 # networking and reaches the control plane and the DERP relays through the
@@ -28,7 +28,14 @@
 # hook's stdout is the session's context.
 set -euo pipefail
 
-[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] && [ -n "${TS_AUTHKEY:-}" ] || exit 0
+[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
+# bootstrap/cloud.sh points claude-mem at the forwarder this hook starts, and
+# without the key there is no forwarder, so the session is told it has no
+# memory rather than finding out from hooks that fail later.
+if [ -z "${TS_AUTHKEY:-}" ]; then
+  echo "claude-mem: TS_AUTHKEY is not set, so this session cannot reach the worker on proxenos and has no memory context" >&2
+  exit 1
+fi
 
 # What Claude Code passed this hook, for claude-mem's context hook.
 input=$(cat)
@@ -49,7 +56,9 @@ keyfile="$log/authkey"
 backend() { tailscale status --json 2>/dev/null | jq -r '.BackendState // empty'; }
 
 # The join, in a subshell whose output goes to stderr, so that its exits end
-# the join rather than the hook.
+# the join rather than the hook. A join that fails is reported and the hook
+# goes on, since the forwarder works once the node is up, which can be after
+# `tailscale up` gave up waiting.
 (
   # A session resumed on a VM that kept running still has its daemon.
   if [ -z "$(backend)" ]; then
@@ -88,7 +97,7 @@ backend() { tailscale status --json 2>/dev/null | jq -r '.BackendState // empty'
   # Registering through the egress proxy took about 30 seconds (measured
   # 2026-10-05), so the wait is longer than that.
   tailscale up --auth-key="file:$keyfile" --hostname="$name" --timeout=120s
-) >&2
+) >&2 || echo "tailscale: the join did not finish ($log/tailscaled.log)" >&2
 
 # The forwarder outlives the hook, as tailscaled does. Each connection is
 # dialed with tailscale nc, through tailscaled, by the MagicDNS short name, so
@@ -100,6 +109,9 @@ fi
 
 # claude-mem's own SessionStart hook found the worker, and added its context.
 [ "$up_at_start" = true ] && exit 0
+# A resumed session keeps the context it started with, and claude-mem's
+# context hook does not run on a resume, so neither does this one.
+[ "$(jq -r '.source // empty' <<<"$input")" = resume ] && exit 0
 
 tries=0
 until worker_up; do

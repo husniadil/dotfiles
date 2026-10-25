@@ -50,7 +50,7 @@ say() { echo "$(date -u +%FT%TZ) $*"; }
 serve() {
   exec >>"$state/serve.log" 2>&1
   echo "== $(date -u +%FT%TZ) session ${CLAUDE_CODE_REMOTE_SESSION_ID:-?}"
-  # A compaction, or a resume that kept the container, finds it serving.
+  # A resume that kept the container finds it serving.
   if answers; then
     say "already serving"
     return 0
