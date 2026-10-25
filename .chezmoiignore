@@ -24,8 +24,13 @@
 
 {{- if ne .machine "cloud" }}
 # The tailnet join is a cloud session's. Other machines run tailscale themselves.
-.claude/hooks
-.claude/hooks/**
+# The worktree hooks are every other machine's.
+.claude/hooks/*
+!.claude/hooks/worktree-*.sh
+{{- else }}
+# The worktree hooks need clones at ~/github.com/<owner>/<repo>, and a cloud
+# session's are not there.
+.claude/hooks/worktree-*.sh
 {{- end }}
 
 {{- if ne .chezmoi.hostname "agamemnon" }}

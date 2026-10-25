@@ -449,7 +449,7 @@ base=$(cat <<'MANAGED_JSON'
   },
   "promptSuggestionEnabled": false,
   "dialogExpiry": "10m",
-  "timeFormat": "auto",
+  "timeFormat": "24-hour",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
@@ -497,6 +497,44 @@ MANAGED_JSON
 extra='{}'
 {{ end -}}
 
+{{ if ne .machine "cloud" -}}
+# Worktrees at ~/.worktrees/<owner>/<repo>/<name>, outside the checkout
+# (~/.claude/hooks/worktree-create.sh and worktree-remove.sh). A cloud
+# session's clones are not under ~/github.com, which the hooks need, so it
+# keeps Claude Code's own place for them.
+worktree=$(cat <<'MANAGED_JSON'
+{
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/worktree-create.sh",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/worktree-remove.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
+MANAGED_JSON
+)
+{{ else -}}
+worktree='{}'
+{{ end -}}
+
 {{ if eq .machine "cloud" -}}
 # The cloud session's tailnet join (~/.claude/hooks/tailscale-up.sh), which
 # claude-mem's worker is reached through, so it runs to its end before the
@@ -516,8 +554,8 @@ hooks='[]'
 # SessionStart groups are appended, each in place of one carrying its own
 # command, rather than merged with *: that replaces an array whole, and
 # agamemnon keeps its own SessionStart hook in the same list.
-printf '%s' "$current" | jq --argjson base "$base" --argjson extra "$extra" --argjson hooks "$hooks" '
-  . * $base * $extra
+printf '%s' "$current" | jq --argjson base "$base" --argjson extra "$extra" --argjson worktree "$worktree" --argjson hooks "$hooks" '
+  . * $base * $extra * $worktree
   | if $hooks == [] then . else
       ([$hooks[].hooks[].command]) as $mine
       | .hooks.SessionStart = [(.hooks.SessionStart // [])[]
