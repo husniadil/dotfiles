@@ -15,7 +15,11 @@ current="$(cat)"
 # Tier routing sends a batch whose observations all come from Read, Glob, Grep,
 # LS or ListMcpResourcesTool to CLAUDE_MEM_TIER_SIMPLE_MODEL. Its default, the
 # alias "haiku", reaches the provider daemon as claude-haiku-5-5, which the
-# Codex account refuses with a 400.
+# Codex account refuses with a 400. The daemon's tier map (haiku = gpt-6-luna)
+# does not apply here. Claude Code reads it only from the
+# ANTHROPIC_DEFAULT_*_MODEL environment a proxenos launch sets, and the
+# observer starts with ~/.claude-mem/.env alone. The daemon itself maps only a
+# bare tier name or the upstream id, so the models below name gpt-6-luna.
 printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_PROVIDER": "claude",
