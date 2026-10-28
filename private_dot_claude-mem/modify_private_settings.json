@@ -20,11 +20,17 @@ current="$(cat)"
 # ANTHROPIC_DEFAULT_*_MODEL environment a proxenos launch sets, and the
 # observer starts with ~/.claude-mem/.env alone. The daemon itself maps only a
 # bare tier name or the upstream id, so the models below name gpt-6-luna.
+#
+# My Work's automatic refresh, from claude-mem 15.1, runs Claude Code on the
+# haiku and sonnet aliases in that same environment, so every run would be
+# refused the same way and retried with a backoff of up to four hours. It stays
+# off here. The 13.39 fork has no such setting and does not read the key.
 printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_PROVIDER": "claude",
   "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
   "CLAUDE_MEM_WORKER_PORT": "37701",
   "CLAUDE_MEM_WORKER_AUTOSTART": "false",
-  "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna"
+  "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna",
+  "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "false"
 }'
