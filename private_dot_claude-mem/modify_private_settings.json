@@ -43,6 +43,14 @@ current="$(cat)"
 # prompt is the pacing under which an active session here queued 200
 # observations in ten minutes while 56 were answered (13.28.1), so it takes 8.
 # The 13.39 fork batches its backlog by itself and does not read the key.
+#
+# My Work's readable title, summary and next step for each request come from a
+# summary model. Upstream calls one only through an OpenRouter key, which this
+# setup does not use, so every card showed its raw agent lines with a spinner
+# that never stopped. CLAUDE_MEM_HUMAN_COPY_PROVIDER=claude (the fork, from
+# 15.4.9) writes them through the observer's own Claude Code, on gpt-6-luna
+# through the daemon, again whenever a request changes, at most once a minute
+# while My Work is open. The worker reads it when it starts.
 printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_PROVIDER": "claude",
@@ -52,5 +60,6 @@ printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "true",
   "CLAUDE_MEM_WORK_VIEW_REFRESH_MINUTES": "30",
-  "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8"
+  "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8",
+  "CLAUDE_MEM_HUMAN_COPY_PROVIDER": "claude"
 }'
