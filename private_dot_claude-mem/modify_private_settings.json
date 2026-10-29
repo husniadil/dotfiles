@@ -24,11 +24,19 @@ current="$(cat)"
 # My Work's automatic refresh, from claude-mem 15.1, runs Claude Code on the
 # haiku and sonnet aliases, which nothing here can rename. So the unit has a
 # hand-written drop-in, ~/.config/systemd/user/claude-mem.service.d/
-# model-aliases.conf, naming a model the daemon serves for each: gpt-6-luna for
-# haiku (grouping, focus) and gpt-6.1-terra for sonnet (goals, review, story),
-# since on gpt-6-luna two long requests overran the review's length limits on
-# every run. With the refresh on and no drop-in, every refresh is refused and
-# tried again ten minutes later, and My Work reads "Sorting…" on every request.
+# model-aliases.conf, naming a model the daemon serves for each alias the
+# refresh asks for: gpt-6-luna for haiku (grouping, focus) and sonnet (goals,
+# review, story), and gpt-6.1-terra for opus, which the fork asks (from 15.4.6)
+# only to retry a review the validator refused. gpt-6-luna overran the review's
+# length limits on two long requests, and gpt-6.1-terra for every review spent
+# quota on the many it gets right. With the refresh on and no drop-in, every
+# refresh is refused and tried again at the next check, and My Work reads
+# "Sorting…" on every request.
+#
+# The checks run every CLAUDE_MEM_WORK_VIEW_REFRESH_MINUTES (the fork, from
+# 15.4.6), 30 here. A request whose conversation is still active is due on every
+# check, so at the default of 10 its review and the story were written six times
+# an hour. The worker reads it when it starts.
 #
 # From 15.4 the observer answers one queued event per prompt unless
 # CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE asks for more (1 to 32). One per
@@ -43,5 +51,6 @@ printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_WORKER_AUTOSTART": "false",
   "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "true",
+  "CLAUDE_MEM_WORK_VIEW_REFRESH_MINUTES": "30",
   "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8"
 }'
