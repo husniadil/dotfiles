@@ -18,13 +18,16 @@ current="$(cat)"
 # Codex account refuses with a 400. The daemon's tier map (haiku = gpt-6-luna)
 # does not apply here. Claude Code reads it only from the
 # ANTHROPIC_DEFAULT_*_MODEL environment a proxenos launch sets, and the
-# observer starts with ~/.claude-mem/.env alone. The daemon itself maps only a
-# bare tier name or the upstream id, so the models below name gpt-6-luna.
+# worker's environment comes from its systemd unit. The daemon itself maps only
+# a bare tier name or the upstream id, so the models below name gpt-6-luna.
 #
 # My Work's automatic refresh, from claude-mem 15.1, runs Claude Code on the
-# haiku and sonnet aliases in that same environment, so every run would be
-# refused the same way and retried with a backoff of up to four hours. It stays
-# off here. The 13.39 fork has no such setting and does not read the key.
+# haiku and sonnet aliases, which nothing here can rename. So the unit has a
+# hand-written drop-in, ~/.config/systemd/user/claude-mem.service.d/
+# model-aliases.conf, setting ANTHROPIC_DEFAULT_HAIKU_MODEL and
+# ANTHROPIC_DEFAULT_SONNET_MODEL to gpt-6-luna, and the refresh is on. Without
+# that drop-in every refresh is refused and retried with a backoff of up to four
+# hours, and My Work reads "Sorting…" on every request.
 #
 # From 15.4 the observer answers one queued event per prompt unless
 # CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE asks for more (1 to 32). One per
@@ -38,6 +41,6 @@ printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_WORKER_PORT": "37701",
   "CLAUDE_MEM_WORKER_AUTOSTART": "false",
   "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna",
-  "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "false",
+  "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "true",
   "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8"
 }'
