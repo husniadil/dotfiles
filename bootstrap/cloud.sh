@@ -103,12 +103,18 @@ if ! jq -e '.plugins["claude-mem@thedotmack"]' "$plugins/installed_plugins.json"
 else
   claude plugin update claude-mem@thedotmack
 fi
+# Deliverables capture stays off. The Stop hook copies a turn's files into
+# ~/.claude-mem/deliverables on this disk and records them with the worker, and
+# it takes the forwarder on 127.0.0.1 for a worker that shares this disk. The
+# copies go with the container, and the worker on proxenos cannot open them.
+# claude-mem 15.4 reads the key, and 13.39 does not.
 mkdir -p "$HOME/.claude-mem"
 cat >"$HOME/.claude-mem/settings.json" <<'EOF'
 {
   "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
   "CLAUDE_MEM_WORKER_PORT": "37701",
   "CLAUDE_MEM_WORKER_AUTOSTART": "false",
-  "CLAUDE_MEM_MODE": "code"
+  "CLAUDE_MEM_MODE": "code",
+  "CLAUDE_MEM_DELIVERABLES_ENABLED": "false"
 }
 EOF
