@@ -25,6 +25,12 @@ current="$(cat)"
 # haiku and sonnet aliases in that same environment, so every run would be
 # refused the same way and retried with a backoff of up to four hours. It stays
 # off here. The 13.39 fork has no such setting and does not read the key.
+#
+# From 15.4 the observer answers one queued event per prompt unless
+# CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE asks for more (1 to 32). One per
+# prompt is the pacing under which an active session here queued 200
+# observations in ten minutes while 56 were answered (13.28.1), so it takes 8.
+# The 13.39 fork batches its backlog by itself and does not read the key.
 printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_PROVIDER": "claude",
@@ -32,5 +38,6 @@ printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_WORKER_PORT": "37701",
   "CLAUDE_MEM_WORKER_AUTOSTART": "false",
   "CLAUDE_MEM_TIER_SIMPLE_MODEL": "gpt-6-luna",
-  "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "false"
+  "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "false",
+  "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8"
 }'
