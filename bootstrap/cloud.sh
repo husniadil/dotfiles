@@ -66,6 +66,19 @@ if ! command -v socat >/dev/null; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq socat
 fi
 
+# A plugin folder in a checked-out repository (the setup script starts in the folder
+# above it) that holds a .cloud-install marker gets its scripts/install.sh run with
+# --cpu-torch, so a repository opts in without being named here. Models are left to
+# download on first use. A failure is reported and the session still starts. Every
+# command reads /dev/null: npx reads stdin, and fed this script on stdin it would
+# swallow the lines after it.
+for marker in "$PWD"/*/.cloud-install "$PWD"/*/*/.cloud-install; do
+  [ -f "$marker" ] || continue
+  install_sh="$(dirname "$marker")/scripts/install.sh"
+  bash "$install_sh" --cpu-torch </dev/null \
+    || echo "cloud install: $install_sh failed; run it in the session"
+done
+
 CHEZMOI_MACHINE=cloud chezmoi init "$repo"
 if [ -n "${DOTFILES_REF:-}" ]; then
   chezmoi git -- checkout --quiet "$DOTFILES_REF"
