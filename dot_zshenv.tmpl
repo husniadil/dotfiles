@@ -57,6 +57,9 @@ export GOBIN="$HOME/.local/bin"
 {{ if eq .machine "laptop" }}# Python / PyTorch
 
 export PYTORCH_ENABLE_MPS_FALLBACK=1
+# HyperFrames runs its local voice (Kokoro) and music (MusicGen) engines with this
+# interpreter, so torch and transformers stay in a venv instead of the global Python.
+export HYPERFRAMES_PYTHON="$HOME/.venvs/hyperframes-audio/bin/python"
 
 {{ end }}# Kubernetes
 
