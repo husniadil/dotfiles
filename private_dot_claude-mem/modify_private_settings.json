@@ -51,6 +51,17 @@ current="$(cat)"
 # 15.4.9) writes them through the observer's own Claude Code, on gpt-6-luna
 # through the daemon, again whenever a request changes, at most once a minute
 # while My Work is open. The worker reads it when it starts.
+#
+# Every tool call a Workflow subagent makes is queued under its parent session,
+# and the worker answers one session's queue with one observer at a time. On
+# 2026-11-06 a session running Workflow pipelines made 9,848 subagent tool
+# calls in fifteen hours (94% of its 10,439), queued up to 1,371 an hour
+# against 117 to 159 answered, and held 7,173 in the worker's memory until a
+# restart dropped them. CLAUDE_MEM_SKIP_AGENT_TYPES=workflow-subagent drops
+# those calls before they are queued or written to tool_uses. The main agent's
+# calls, including the Workflow call that starts the subagents, and other
+# subagents' calls (Explore and the like) are still observed. The worker reads
+# it on every tool call, so it needs no restart.
 printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_MODEL": "gpt-6-luna",
   "CLAUDE_MEM_PROVIDER": "claude",
@@ -61,5 +72,6 @@ printf '%s' "$current" | jq '. + {
   "CLAUDE_MEM_WORK_VIEW_AUTO_REFRESH": "true",
   "CLAUDE_MEM_WORK_VIEW_REFRESH_MINUTES": "30",
   "CLAUDE_MEM_CLAUDE_OBSERVATION_BATCH_SIZE": "8",
-  "CLAUDE_MEM_HUMAN_COPY_PROVIDER": "claude"
+  "CLAUDE_MEM_HUMAN_COPY_PROVIDER": "claude",
+  "CLAUDE_MEM_SKIP_AGENT_TYPES": "workflow-subagent"
 }'
